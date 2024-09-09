@@ -1,0 +1,33 @@
+@font-face {
+  font-family: 'customFont_RomanNo2';
+  src: url('./assets/AustinText-RomanNo2-Trial.otf') format('opentype');
+}
+@font-face {
+  font-family: 'customFont_Roman';
+  src: url('./assets/Austin-Roman-Trial.otf') format('opentype');
+}
+@font-face {
+  font-family: 'customFont_TestMetric';
+  src: url('./assets/TestMetric-Thin.otf') format('opentype');
+}
+@font-face {
+  font-family: 'customFont_metric';
+  src: url('./assets/test-metric-thin.woff2') format('opentype');
+}
+@font-face {
+  font-family: 'customFont_AustinText';
+  src: url('./assets/AustinText-Roman.otf') format('opentype');
+}
+html, body{
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+#root{
+  height: 100%;
+  width: 100%;
+}
+body::-webkit-scrollbar {
+        display: none;
+      }
