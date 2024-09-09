@@ -38,6 +38,7 @@ function App () {
   const rotate = useRef(0)
   const distanceX = useRef(0)
   const startOffsetObj = useRef({})
+  // const [ellipseIsShow, setEllipseIsShow] = useState(true)
   const ellipseIsShow = useRef(true)
   const imgDarken = useRef(false)
   const [contentText, setContentText] = useState([
@@ -91,8 +92,19 @@ function App () {
     }
   ])
   useEffect(() => {
+    // boxTopRef.current.appendChild(renderer.domElement);
+    // 创建一个渲染器并启用抗锯齿
+    // const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // renderer.setSize(window.innerWidth, window.innerHeight);
+    // boxTopRef.current.appendChild(renderer.domElement);
+
     initRing()
+    // initYearRing()
+    // initYearEllipseByCanvas()
     initYearEllipseBySvg()
+    // initCube()
+    // testFn()
+    // testLine()
     return () => {
       // clearInterval(setIntervalFn)
     }
@@ -101,29 +113,46 @@ function App () {
     const clientWidth = boxTopRef.current.clientWidth * 1
     const clientHeight = boxTopRef.current.clientHeight * 1
     const scene = new THREE.Scene();
+    // scene.background = new THREE.Color(0x87CEEB);
     const camera = new THREE.PerspectiveCamera(75, clientWidth / clientHeight, 0.1, 1000);
     camera.position.z = 6;
     camera.position.x = 0;
     camera.position.y = -2;
     camera.lookAt(0, 0, 0);
+    // const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(clientWidth, clientHeight);
+    // 设置清除颜色为完全透明的黑色（0x00000000，前两位 0x00 表示透明度为 0）
+    // renderer.setClearColor(0x00000000);
     boxTopRef.current.appendChild(renderer.domElement);
+
     // 创建圆环几何体
     const geometry = new THREE.RingGeometry(19, 20, 64);
+
     // 创建材质，可根据需求调整外观
     const material = new THREE.MeshBasicMaterial({
       color: 0x00ff00,
       transparent: true,
       opacity: 0
     });
+
     // 创建圆环网格
     const ring = new THREE.Mesh(geometry, material);
     ring.position.set(0, 19.5, 0)
     scene.add(ring);
+    // 添加刻度 线条
     const lineData = []
     // 创建一个空的组来包含所有线条
+    // const lineGroup = new THREE.Group();
+    // lineGroup.position.set(0, 32, 0)
+    // scene.add(lineGroup);
     for (let i = 0; i < 240; i++) {
+      // const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+      //   new THREE.Vector3(Math.sin(i * (2 * Math.PI / 64)) * 10, Math.cos(i * (2 * Math.PI / 64)) * 10, 0),
+      //   new THREE.Vector3(Math.sin(i * (2 * Math.PI / 64)) * 12, Math.cos(i * (2 * Math.PI / 64)) * 12, 0),
+      // ]);
+      // const lineMaterial = new THREE.LineBasicMaterial({ color: i % 2 === 0 ? 0xffffff : 0xff0000, linewidth: 5 });
+      // const line = new THREE.Line(lineGeometry, lineMaterial);
       const lineGeometry = new LineGeometry()
       lineGeometry.setPositions([Math.sin(i * (2 * Math.PI / 240)) * 19, Math.cos(i * (2 * Math.PI / 240)) * 19, 0, Math.sin(i * (2 * Math.PI / 240)) * 20, Math.cos(i * (2 * Math.PI / 240)) * 20, 0])
       const lineMaterial = new LineMaterial({ color: 0x000000, linewidth: i % 2 === 0 ? 2 : 1 })
@@ -131,23 +160,49 @@ function App () {
       line.position.set(0, 19.5, 0)
       scene.add(line);
       lineData.push(line);
+      // lineGroup.add(line);
     }
+    // 添加刻度 圆柱体
+    // for (let i = 0; i < 64; i++) {
+    //   const radius = 1;
+    //   const height = 2;
+    //   const radialSegments = 32;
+    //   const heightSegments = 16;
+    //   const cylinderGeometry = new THREE.CylinderGeometry(radius, radius, height, radialSegments, heightSegments);
+    //   const cylinderMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+    //   const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+    //   cylinder.position.set(Math.sin(i * (2 * Math.PI / 64)) * 10, Math.cos(i * (2 * Math.PI / 64)) * 10, 0)
+    //   cylinderData.push(cylinder);
+    //   cylinder.rotation.x = Math.PI / 2;
+    //   scene.add(cylinder);
+    // }
     // 添加坐标轴辅助对象
     const axesHelper = new THREE.AxesHelper(5);
     axesHelper.position.set(0, 20, 2)
     // scene.add(axesHelper);
+    // 添加轨道控制器并允许绕 z 轴旋转
+    // const controls = new OrbitControls(camera, renderer.domElement);
+    // controls.enableRotateZ = true;
+    // controls.enableRotateX = false;
+    // controls.enableRotateY = false;
+    // controls.minDistance = 2;
+    // controls.maxDistance = 10;
+    // let rotationAngle = 0;
     // 记录鼠标按下时的位置和旋转状态
     let mouseDown = false;
     let prevMouse = new THREE.Vector2();
     let cubeRotation = new THREE.Euler();
     var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
+    // let rotate = 0
     const onMouseDown = (event) => {
       // 将浏览器的2D鼠标位置转换为THREE.js的标准设备坐标(-1到+1)
       mouse.x = (event.clientX / clientWidth) * 2 - 1;
       mouse.y = - (event.clientY / clientHeight) * 2 + 1;
+
       // 使用鼠标的2D位置和相机进行射线投射
       raycaster.setFromCamera(mouse, camera);
+
       // 计算物体和射线的交点
       var intersects = raycaster.intersectObjects([ring]);
       // 如果存在交点
@@ -162,6 +217,10 @@ function App () {
         }
       } else {
         console.log('鼠标点击不在3D对象上');
+        // rotate += 360 / 64
+        // lineData.forEach((item) => {
+        //   item.rotation.z = rotate
+        // })
       }
     }
     const onMouseMove = (event) => {
@@ -177,12 +236,15 @@ function App () {
         // rotate.current = cubeRotation.y
         rotate.current = Math.round(cubeRotation.y / rotationStep) * rotationStep
         // 更新立方体的旋转
+        // cube.rotation.set(cubeRotation.x, cubeRotation.y, cube.rotation.z);
         lineData.forEach((item) => {
           item.rotation.z = rotate.current
         })
         // 共240条刻度线，每6条线Math.PI*2/240*6 弧度
+
         prevMouse.x = event.clientX;
         prevMouse.y = event.clientY;
+        // initYearEllipseByCanvas()
         rotateLinkageEllipse()
       }
     }
@@ -244,6 +306,7 @@ function App () {
     const segmentPercentage = 100 / totalSegments; // 每段占路径的百分比
     textArr.forEach((text, index) => {
       // 创建文字元素
+      // const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
       const textElement = bottomSvgEllipseTextRef.current;
       const textPathElement = document.createElementNS("http://www.w3.org/2000/svg", "textPath");
       textPathElement.setAttribute('href', '#ellipsePath');
@@ -261,9 +324,12 @@ function App () {
         boxBottomTextRef.current.scrollTop = 0
         rotateHideEllipse()
       });
+      // textElement.style.transform = 'scale(1.3, 1)'
+      // textElement.style['transform-origin'] = 'center center'
       startOffsetObj.current[`textPath_${text}`] = startOffset
       // 将textPath添加到text中，再将text添加到svg
       textElement.appendChild(textPathElement);
+      // svgCanvas.appendChild(textElement);
     });
   }
   // 旋转联动椭圆
@@ -278,12 +344,23 @@ function App () {
       const textPathElement = document.getElementById(`textPath_${text}`);
       // 计算每个年代的起始位置，确保等距分布
       // 根据角度偏转角度就是比例
+      // let rotateProportion = rotate.current / (Math.PI * 2) * 100
       let rotateProportion = rotate.current / (Math.PI * 2 / 240) * (segmentPercentage / 6)
       let startOffsetVal = 25 - (2.5 * segmentPercentage) + index * segmentPercentage + segmentPercentage / 2 + rotateProportion
       let startOffset = startOffsetVal >= 100 ? startOffsetVal % 100 : startOffsetVal <= 0 ? startOffsetVal % 100 + 100 : startOffsetVal
       textPathElement.setAttribute('startOffset', `${startOffset}%`);
       startOffsetObj.current[`textPath_${text}`] = startOffset
     });
+    function calculateEllipseArcLength (startAngle, endAngle) {
+      const semiMajorAxis = semiMajorAxisVal.current
+      const semiMinorAxis = semiMinorAxisVal.current
+      // 对于椭圆弧的长度计算，使用公式: θ * (semiMajorAxis + semiMinorAxis * tan(θ/2))
+      // 其中 semiMajorAxis 是椭圆的长半轴，semiMinorAxis 是短半轴，θ 是弧度
+      const deltaTheta = endAngle - startAngle; // 弧度表示的角度差
+      const thetaOver2 = (deltaTheta / 2);
+      const length = deltaTheta * (semiMajorAxis + semiMinorAxis * Math.tan(thetaOver2));
+      return length;
+    }
   }
   // 旋转隐藏椭圆
   const rotateHideEllipse = () => {
@@ -300,6 +377,8 @@ function App () {
     imgDarken.current = true;
     const setIntervalFn1 = setInterval(() => {
       i++;
+      // let newSemiMajorAxis = semiMajorAxis - i * 4
+      // let newSemiMinorAxis = semiMinorAxis - i * 2
       let newSemiMajorAxis = semiMajorAxis
       let newSemiMinorAxis = semiMinorAxis
       const d = `M${centerX},${centerY} m-${newSemiMajorAxis},0 a${newSemiMajorAxis},${newSemiMinorAxis} 0 1,1 ${2 * newSemiMajorAxis},0 a${newSemiMajorAxis},${newSemiMinorAxis} 0 1,1 -${2 * newSemiMajorAxis},0`;
@@ -318,6 +397,7 @@ function App () {
         let startOffset = startOffsetVal >= 100 ? startOffsetVal % 100 : startOffsetVal <= 0 ? startOffsetVal % 100 + 100 : startOffsetVal
         textPathElement.setAttribute('startOffset', `${startOffset}%`);
         textPathElement.setAttribute('fill', `rgba(0,0,0,${1 - i * 1 / 50})`);
+        // textPathElement.setAttribute('font-size', `19-${i * 19 / 200}px`);
       });
       if (i >= 50) {
         ellipseIsShow.current = false
@@ -373,6 +453,290 @@ function App () {
         }
       }, interval);
     }, 1000)
+  }
+  // canvas 绘制椭圆
+  const initYearEllipseByCanvas = () => {
+    const clientWidth = boxBottomRef.current.clientWidth * 0.95
+    const clientHeight = boxBottomRef.current.clientHeight * 0.95
+    const canvas = bottomCanvasRef.current;
+    canvas.width = clientWidth
+    canvas.height = clientHeight
+    const ctx = canvas.getContext('2d');
+    const textArr = ['1950s', '1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s', '2030s', '2040s', '2050s']
+    const angleStep = (2 * Math.PI) / textArr.length;
+    ctx.clearRect(0, 0, clientWidth, clientHeight);
+    const centerX = clientWidth / 2;
+    const centerY = clientHeight / 2;
+    const semiMajorAxis = semiMajorAxisVal.current
+    const semiMinorAxis = semiMinorAxisVal.current
+    function drawEllipse (x, y, a, b) {
+      ctx.beginPath();
+      ctx.strokeStyle = 'gray';
+      ctx.lineWidth = 1;
+      ctx.ellipse(x, y, a, b, 0, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+    // 计算椭圆圆周上点的坐标
+    function pointOnEllipse (x, y, a, b, angle) {
+      return [x + a * Math.cos(angle), y + b * Math.sin(angle)];
+    }
+    // 计算椭圆上某点切线与轴正方向的夹角
+    function getRoateVal (a, b, t) {
+      const angle = Math.atan2(b * Math.cos(t), -a * Math.sin(t));
+      return angle
+    }
+    drawEllipse(centerX, centerY, semiMajorAxis, semiMinorAxis);
+    for (let i = 0; i < textArr.length; i++) {
+      const textWidth = ctx.measureText(textArr[i]).width
+      const textHeight = ctx.measureText(textArr[i]).actualBoundingBoxAscent + ctx.measureText(textArr[i]).actualBoundingBoxDescent
+      const angle = i * angleStep + rotate.current;
+      const [pointX, pointY] = pointOnEllipse(centerX, centerY, semiMajorAxis, semiMinorAxis, angle);
+      const pointX1 = centerX + semiMajorAxis * Math.cos(angle)
+      const pointY1 = centerY + semiMinorAxis * Math.cos(angle)
+      ctx.save();
+      ctx.translate(pointX, pointY);
+      const rotationAngle = getRoateVal(semiMajorAxis, semiMinorAxis, angle)
+      ctx.rotate(rotationAngle);
+      // ctx.rotate(Math.PI / 2);
+      ctx.font = '30px customFont_Roman';
+      ctx.fillStyle = 'blue';
+      ctx.fillText(textArr[i], -textWidth, textHeight);
+      ctx.restore();
+    }
+    function rotatePoint (centerX, centerY, angle, pointX, pointY) {
+      // 转换角度到弧度
+      angle = angle * Math.PI / 180;
+
+      // 计算相对于中心点的偏移
+      var dx = pointX - centerX;
+      var dy = pointY - centerY;
+
+      // 应用公式计算旋转后的点
+      var rx = (dx * Math.cos(angle)) - (dy * Math.sin(angle)) + centerX;
+      var ry = (dx * Math.sin(angle)) + (dy * Math.cos(angle)) + centerY;
+
+      return { x: rx, y: ry };
+    }
+  }
+  const initYearRing = () => {
+    const clientWidth = boxBottomRef.current.clientWidth
+    const clientHeight = boxBottomRef.current.clientHeight
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, clientWidth / clientHeight, 0.1, 1000);
+    camera.position.z = 5;
+    // camera.position.x = 0;
+    // camera.position.y = -3;
+    // camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(clientWidth, clientHeight);
+    boxBottomRef.current.appendChild(renderer.domElement);
+    // 创建字体加载器
+    const fontLoader = new FontLoader();
+    fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      // 圆周半径
+      const radius = 3;
+
+      // 文字数量
+      const numTexts = 8;
+
+      // 计算角度间隔
+      const angleStep = (2 * Math.PI) / numTexts;
+      const textArr = ['2010s', '2020s', '2030s', '2040s', '2050s', '2060s', '2070s', '2080s']
+      for (let i = 0; i < numTexts; i++) {
+        const angle = i * angleStep;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+
+        // 创建文字几何体
+        const textGeometry = new TextGeometry(textArr[i], {
+          font: font,
+          size: 0.3,
+          height: 0.1,
+        });
+
+        // 创建文字材质
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // 创建文字网格并设置位置
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        const boundingBox = new THREE.Box3().setFromObject(new THREE.Mesh(textGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff })));
+        const width = boundingBox.max.x - boundingBox.min.x;
+        textMesh.position.set(x, y, 0);
+        // 计算旋转角度以使其与圆周平行
+        const rotationAngle = angle + Math.PI / 2;
+        textMesh.rotation.z = rotationAngle;
+        scene.add(textMesh);
+      }
+    });
+    const axesHelper = new THREE.AxesHelper(5);
+    // axesHelper.position.set(0, 20, 2)
+    scene.add(axesHelper);
+    // 渲染循环
+    const animate = () => {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    // 窗口大小变化时调整相机和渲染器
+    window.addEventListener('resize', () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    });
+  }
+  const initCube = () => {
+    // 创建场景、相机和渲染器
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 50;
+    // camera.position.x = 0;
+    // camera.position.y = 5;
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    boxTopRef.current.appendChild(renderer.domElement);
+
+    // 创建立方体
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    // 设置相机位置
+    camera.position.z = 5;
+
+    // 旋转变量
+    let angle = 0;
+
+    // 渲染循环
+    function animate () {
+      requestAnimationFrame(animate);
+
+      // 计算旋转角度
+      angle += 0.01;
+
+      // 围绕Z轴旋转立方体
+      cube.rotateOnAxis(new THREE.Vector3(0, 0, 1), angle);
+
+      // 渲染场景
+      renderer.render(scene, camera);
+    }
+
+    animate(); // 开始动画循环
+  }
+  const testFn = () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    boxTopRef.current.appendChild(renderer.domElement);
+    camera.position.z = 5;
+    const radius = 2; // 圆形半径
+    const segments = 64; // 分段数
+    const geometry = new THREE.CircleGeometry(radius, segments);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const circle = new THREE.Mesh(geometry, material);
+    scene.add(circle);
+    const scaleCount = 36; // 刻度数量
+    for (let i = 0; i < scaleCount; i++) {
+      const scaleLength = 0.2; // 刻度线长度
+      const scaleGeometry = new THREE.BoxGeometry(0.05, scaleLength, 0.01);
+      const scaleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const scale = new THREE.Mesh(scaleGeometry, scaleMaterial);
+      const angle = (i / scaleCount) * 2 * Math.PI;
+      scale.position.set(radius * Math.sin(angle), radius * Math.cos(angle), 0);
+      scene.add(scale);
+    }
+    let mouse = new THREE.Vector2();
+    let rotation = new THREE.Euler();
+    let prevMouse = new THREE.Vector2();
+    let isDragging = false;
+
+    document.addEventListener('mousedown', onMouseDown, false);
+    document.addEventListener('mousemove', onMouseMove, false);
+    document.addEventListener('mouseup', onMouseUp, false);
+
+    function onMouseDown (event) {
+      event.preventDefault();
+      const raycaster = new THREE.Raycaster();
+      const mousePosition = new THREE.Vector2();
+      mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mousePosition.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mousePosition, camera);
+      const intersects = raycaster.intersectObjects(scene.children);
+      for (const intersect of intersects) {
+        if (intersect.object instanceof THREE.Mesh && intersect.object.geometry.type === 'BoxGeometry') {
+          // 判断是否点击在刻度线上
+          isDragging = true;
+          prevMouse.copy(mouse);
+          onMouseMove(event);
+          break;
+        }
+      }
+    }
+
+    function onMouseMove (event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onMouseUp (event) {
+      event.preventDefault();
+      isDragging = false;
+    }
+    function animate () {
+      requestAnimationFrame(animate);
+      if (isDragging) {
+        const deltaX = mouse.x - prevMouse.x;
+        const deltaY = mouse.y - prevMouse.y;
+        rotation.set(0, 0, -deltaX * 0.01);
+        circle.rotation.copy(rotation);
+        // 更新刻度的旋转
+        for (let i = 0; i < scene.children.length; i++) {
+          if (scene.children[i] instanceof THREE.Mesh && scene.children[i] !== circle) {
+            scene.children[i].rotation.copy(circle.rotation);
+          }
+        }
+        prevMouse.copy(mouse);
+      }
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  }
+  const testLine = () => {
+    // 创建场景、相机和渲染器
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    boxTopRef.current.appendChild(renderer.domElement);
+
+    // 创建线条几何体
+    const points = [];
+    points.push(new THREE.Vector2(-5, 0));
+    points.push(new THREE.Vector2(0, 5));
+    points.push(new THREE.Vector2(5, 0));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    // 创建线条材质
+    const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+
+    // 创建线条对象
+    const line = new Line2(geometry, material);
+    scene.add(line);
+
+    // 调整相机位置
+    camera.position.z = 5;
+
+    // 渲染循环
+    function animate () {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
   }
   const updateDate = () => {
     const newDate = new Date()
